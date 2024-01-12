@@ -1,0 +1,40 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file>icons/add.svg</file>
+        <file>icons/add_blue.svg</file>
+        <file>icons/arrow_circle_right.svg</file>
+        <file>icons/arrow_right.svg</file>
+        <file>icons/close.svg</file>
+        <file>icons/confirm.svg</file>
+        <file>icons/confirm_disabled.svg</file>
+        <file>icons/connect.svg</file>
+        <file>icons/connected.svg</file>
+        <file>icons/disconnect.svg</file>
+        <file>icons/download.svg</file>
+        <file>icons/drag_handle.svg</file>
+        <file>icons/equal.svg</file>
+        <file>icons/error_circle.svg</file>
+        <file>icons/expand_circle_down.svg</file>
+        <file>icons/expand_more.svg</file>
+        <file>icons/floatType.svg</file>
+        <file>icons/Item_icon.svg</file>
+        <file>icons/less.svg</file>
+        <file>icons/more.svg</file>
+        <file>icons/ok_circle.svg</file>
+        <file>icons/open_file.svg</file>
+        <file>icons/refresh.svg</file>
+        <file>icons/remove.svg</file>
+        <file>icons/save.svg</file>
+        <file>icons/server.svg</file>
+        <file>icons/server_connected.svg</file>
+        <file>icons/server_disconnected.svg</file>
+        <file>icons/settings.svg</file>
+        <file>icons/table.svg</file>
+        <file>icons/table_g.svg</file>
+        <file>icons/toggle_off.svg</file>
+        <file>icons/toggle_on.svg</file>
+        <file>icons/upload.svg</file>
+        <file>icons/watch.svg</file>
+        <file>icons/app_icon.svg</file>
+    </qresource>
+</RCC>

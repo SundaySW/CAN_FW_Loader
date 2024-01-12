@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="Resources/icons.qrc">
+    <normaloff>:/icons/icons/app_icon.svg</normaloff>:/icons/icons/app_icon.svg</iconset>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QWidget {
+	color: #BBBBBB;
+	background:#3B3F40;
+    font-family:Rubik;
+}
+
+
+QLineEdit {
+	font-family: Rubik;
+	background-color: #545657;
+	padding: 5px;
+	border-color: #BBBBBB;
+	border: 0,5px solid #BBBBBB ;
+	border-radius: 5px;
+}
+
+
+
+
+
+QPushButton::checked{
+	background: none;
+	border: none;
+}
+
+
+
+QGroupBox{
+	border: 1px solid #545657;
+	padding: 10px;
+	margin: 10px;
+}
+
+
+
+
+QProgressBar {
+border: 0,5px solid white;
+padding: 1px;
+border-radius: 7px;
+}
+
+QProgressBar::chunk {
+background-color: #B0CB1F;
+border-radius: 7px;
+border: 0,5px solid #B0CB1F;
+}
+
+
+
+
+
+
+
+
+
+QComboBox {
+	color: #BBBBBB;
+    border: 1px solid gray;
+    border-radius: 3px;
+    padding: 1px 18px 1px 3px;
+    min-width: 6em;
+}
+
+QComboBox:on {
+    padding-top: 3px;
+    padding-left: 4px;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 16px;
+    border-left-width: 1px;
+    border-left-color: darkgray;
+    border-left-style: solid;
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
+}
+QComboBox::down-arrow {
+	width: 16px;
+	height: 16px;
+    image: url(:/icons/expand_more.svg);
+}
+
+
+
+
+
+
+
+
+
+
+QScrollBar:vertical {
+    background: transparent;
+    width: 7px;
+	border: none;
+}
+QScrollBar::handle {
+	background: #545657;
+ 	border-radius: 4px;
+	min-height: 7px;
+}
+QScrollBar::add-line:vertical {
+    border-top: solid 5px transparent;
+    background: none;
+    height: 20px;
+    subcontrol-position: bottom;
+    subcontrol-origin: padding;
+}
+QScrollBar::sub-line:vertical {
+    border: none;
+    background: none;
+    height: 20px;
+    subcontrol-position: top;
+    subcontrol-origin: margin;
+}</string>
+  </property>
+  <property name="iconSize">
+   <size>
+    <width>35</width>
+    <height>35</height>
+   </size>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="QPushButton" name="status_button">
+        <property name="minimumSize">
+         <size>
+          <width>50</width>
+          <height>50</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>50</width>
+          <height>50</height>
+         </size>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="Resources/icons.qrc">
+          <normaloff>:/icons/icons/ok_circle.svg</normaloff>:/icons/icons/ok_circle.svg</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>45</width>
+          <height>45</height>
+         </size>
+        </property>
+        <property name="autoDefault">
+         <bool>true</bool>
+        </property>
+        <property name="default">
+         <bool>true</bool>
+        </property>
+        <property name="flat">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QListWidget" name="status_listWidget">
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>150</height>
+         </size>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::Panel</enum>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>15</width>
+          <height>15</height>
+         </size>
+        </property>
+        <property name="movement">
+         <enum>QListView::Static</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="server_button">
+        <property name="minimumSize">
+         <size>
+          <width>50</width>
+          <height>50</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>50</width>
+          <height>50</height>
+         </size>
+        </property>
+        <property name="sizeIncrement">
+         <size>
+          <width>50</width>
+          <height>50</height>
+         </size>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="Resources/icons.qrc">
+          <normaloff>:/icons/icons/server_disconnected.svg</normaloff>:/icons/icons/server_disconnected.svg</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>45</width>
+          <height>45</height>
+         </size>
+        </property>
+        <property name="autoDefault">
+         <bool>true</bool>
+        </property>
+        <property name="default">
+         <bool>true</bool>
+        </property>
+        <property name="flat">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="0">
+       <spacer name="verticalSpacer">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>40</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources>
+  <include location="Resources/icons.qrc"/>
+ </resources>
+ <connections/>
+</ui>

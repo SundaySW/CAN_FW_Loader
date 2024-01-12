@@ -1,0 +1,6 @@
+#pragma once
+
+#define kPROJECT_NAME   "@PROJECT_NAME@"
+#define kPROJECT_VER    "@PROJECT_VERSION@"
+#define kBUILD_TYPE     "@CMAKE_BUILD_TYPE@"
+#define kServerReconnectionTime 1000
