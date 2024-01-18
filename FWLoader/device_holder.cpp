@@ -1,14 +1,12 @@
 
 #include "device_holder.hpp"
 
-SocketAdapter Socket;
-
 DeviceHolder::DeviceHolder(const QString &fileName, uchar address, uint uid, uchar uidT, uchar ver):
-        Address(address),
-        UID(uid),
-        UIDType(uidT),
-        dataPending(false),
-        loadingSWVer(ver)
+        Address(address)
+        , UID(uid)
+        , UIDType(uidT)
+        , dataPending(false)
+        , loadingSWVer(ver)
 {
     BABuffer = new QByteArray(BLOCK_SIZE_FLASH, 0xFF);
     fwFile = new QFile(fileName);
@@ -170,7 +168,7 @@ void DeviceHolder::sendBootmsg(uchar* data, uint32_t idBytes, uchar msgType){
     setAddrCRCMsg.ProtocolType = ProtosMessage::RAW;
     setAddrCRCMsg.BootLoader = ProtosMessage::BOOT;
 
-    Socket.SendMsg(setAddrCRCMsg);
+    msgToSend(setAddrCRCMsg);
 }
 
 bool DeviceHolder::isLastBlock() {

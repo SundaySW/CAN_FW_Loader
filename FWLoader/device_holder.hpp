@@ -6,9 +6,9 @@
 #include <QtCore/QElapsedTimer>
 
 #include <protos_message.h>
-#include <socket_adapter.h>
-
 #include <Protos/protos.h>
+
+#include "TCPSocket/tcp_socket.hpp"
 
 #define BLOCK_SIZE_FLASH    (4096)
 #define BYTES_IN_PACKET     (8)
@@ -20,17 +20,16 @@ public:
     std::function<void(uint UID)> readyToSendSignal;
     std::function<void(const QString& error, uint uid)> errorSignal;
     std::function<void(uint uid, int msecs)> finishedDevice;
+    std::function<void(const ProtosMessage&)> msgToSend;
 
     DeviceHolder() = default;
     DeviceHolder(const QString&, uchar, uint, uchar, uchar);
     bool transmitBlock();
     void ackReceived();
     void missedPackets(uint16_t from, uint8_t len, uint16_t targetBlockNum);
-    void unvalidatedBlock(uint16_t targetBlockNum);
-    void blockOK(uint receivedBlockNum);
     bool isLastBlock();
     void manageBlock(uint receivedBlockNum);
-    uint getStatusBarData() const;
+    [[nodiscard]] uint getStatusBarData() const;
     void finishProcess();
     void restart();
     void sendJumpToBootmsg();

@@ -4,15 +4,17 @@
 
 #include "fw_loader.hpp"
 
-FWLoader::FWLoader()
+FWLoader::FWLoader(const QSharedPointer<Tcp_socket>& socket):
+    socket_(socket)
 {}
 
 void FWLoader::addDevice(const QString &fileName, uchar addr, uint uid, uchar uidT, uchar ver) {
     DeviceHolder device = DeviceHolder(fileName, addr, uid, uidT, ver);
-    device.OnNextBlockSignal = [this](uint delta, uint uid, uint addr){ signalNextBlock(delta, uid, addr); };
-    device.readyToSendSignal = [this](uint UID){ signalBootData(UID); };
-    device.errorSignal       = [this](const QString& error, uint uid){ signalError(error, uid); };
-    device.finishedDevice    = [this](uint uid, int msecs){removeDevice(uid, msecs);};
+    device.OnNextBlockSignal = [this](uint delta, uint uid, uint addr)  { signalNextBlock(delta, uid, addr); };
+    device.readyToSendSignal = [this](uint UID)                         { transmitBlock(UID); };
+    device.errorSignal       = [this](const QString& error, uint uid)   { signalError(error, uid); };
+    device.finishedDevice    = [this](uint uid, int msecs)              { removeDevice(uid, msecs);};
+    device.msgToSend         = [this](const ProtosMessage& m)           { socket_->SendMsg(m); };
     deviceList.insert(uid, device);
     device.sendJumpToBootmsg();
 }

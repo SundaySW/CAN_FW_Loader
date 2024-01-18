@@ -17,8 +17,9 @@ void Tcp_socket::ReadingLoop(){
     QString serverName = ip_;
     quint16 serverPort = port_;
     QTcpSocket socket;
-    socket.connectToHost(serverName, serverPort);
+    ProtosMessage msg;
 
+    socket.connectToHost(serverName, serverPort);
     if(!socket.waitForConnected()){
         emit error(QString("Connection Error Ip:%1 port:%2").arg(serverName).arg(serverPort));
         return;
@@ -28,8 +29,6 @@ void Tcp_socket::ReadingLoop(){
     connect(&socket, &QTcpSocket::disconnected, [this, serverName, serverPort]{
         emit disconnected(QString("Disconnected from %1:%2").arg(serverName).arg(serverPort));
     });
-
-    ProtosMessage msg;
 
     while(thread_flag_.load()){
         if(socket.waitForReadyRead()){

@@ -32,6 +32,7 @@ include_directories(
         FWLoader
         Protos
         TCPSocket
+        DeviceItemView
 )
 
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
@@ -39,6 +40,7 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
         ${CMAKE_CURRENT_SOURCE_DIR}/FWLoader/*.*
         ${CMAKE_CURRENT_SOURCE_DIR}/Protos/*.*
         ${CMAKE_CURRENT_SOURCE_DIR}/TCPSocket/*.*
+        ${CMAKE_CURRENT_SOURCE_DIR}/DeviceItemView/*.*
         )
 
 set(PROJECT_SOURCES
