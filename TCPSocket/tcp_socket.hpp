@@ -2,10 +2,13 @@
 
 #include <QTcpSocket>
 #include <QThread>
+#include <QMutex>
 
 #include "moodycamel/concurrentqueue.h"
 
 #include "protos_message.h"
+
+#include "SocketThread.hpp"
 
 class Tcp_socket : public QObject{
 Q_OBJECT
@@ -13,15 +16,15 @@ Q_OBJECT
     using MsgHandlerT = std::function<void(const ProtosMessage&)>;
     using ErrorHandlerT = std::function<void(const QString&)>;
 signals:
-    void connected();
-    void disconnected();
+    void connected(const QString&);
+    void disconnected(const QString&);
     void error(const QString&);
 
 public:
     Tcp_socket();
     ~Tcp_socket();
     void SendMsg(const ProtosMessage&);
-    bool Connect(const QString& Ip, const int& Port, int Timeout = 10);
+    void Connect(const QString& Ip, const int& Port, int Timeout = 10);
     void Disconnect(int Timeout = 0);
     std::optional<QString> GetIp();
     int  GetPort();
@@ -31,37 +34,33 @@ public:
     void AddErrorHandler(const ErrorHandlerT&);
 
 private:
-    const int kServiceBytesCnt = 4, kMaxProtosMsgLength = 15;
-    QTcpSocket socket_;
+    const int kServiceBytesCnt = 4,
+        kMaxProtosMsgLength = 15,
+        kMinPacketLength = 9;
+
+    QMutex mutex_;
+    QString ip_;
+    int port_{};
+
     MsgQueue tx_msg_queue_;
 
-    QThread* read_thread_;
-    std::atomic<bool> read_thread_flag_{true};
-    QThread* write_thread_;
-    std::atomic<bool> write_thread_flag_{true};
+    std::atomic<bool> thread_flag_{true};
+    QSharedPointer<QThread> socket_thread_;
 
     QList<MsgHandlerT> rx_msg_handler_list_;
     QList<MsgHandlerT> tx_msg_handler_list_;
     QList<ErrorHandlerT> error_handler_list_;
 
-    int expected_byte_ = START_BYTE;
-    enum
-    {
-        START_BYTE,
-        FIRST_STATUS_BYTE,
-        SECOND_STATUS_BYTE,
-        DATA_BYTE,
-        STOP_BYTE
-    };
+    QByteArray data_buffer_{};
 
-    void MsgPullOut();
-    void MsgPullOut2();
-    static std::pair<QString, ProtosMessage> ConvertDataToMsg(const QByteArray&);
-    void ErrorHandler(const QString&);
     void ReadingLoop();
-    void WritingLoop();
-    bool WriteMsg(ProtosMessage&);
+    void MsgPullOut(QByteArray&);
+    QByteArray PackSocketMsg(ProtosMessage &msg);
+    static std::pair<QString, ProtosMessage> ConvertDataToMsg(const QByteArray&);
+
+    void ErrorHandler(const QString&);
     void RxMsgHandler(ProtosMessage&);
     void TxMsgHandler(const ProtosMessage&);
-};
 
+    void ThreadsDelete();
+};

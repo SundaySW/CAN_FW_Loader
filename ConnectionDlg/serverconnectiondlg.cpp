@@ -26,36 +26,32 @@ ServerConnectionDlg::ServerConnectionDlg(const QSharedPointer<Tcp_socket>& socke
 
     connect(serverReconnectionTimer_, &QTimer::timeout, [this]() { ServerReconnectionTimerHandler(); });
     serverReconnectionTimer_->start(kServerReconnectionTime);
+    connect(socket_.get(), &Tcp_socket::connected, this, [this](const QString& m){
+        ui->connect_pushButton->setChecked(true);
+        emit eventInServerConnection(m, false);
+    });
+    connect(socket_.get(), &Tcp_socket::error, this, [this](const QString& m){
+        emit eventInServerConnection(m, true);
+    });
+    connect(socket_.get(), &Tcp_socket::disconnected, this, [this](const QString& m){
+        ui->connect_pushButton->setChecked(false);
+        emit eventInServerConnection(m, true);
+    });
  }
 
 void ServerConnectionDlg::connectBtnClicked(){
-    if(socket_->IsConnected()){
-        socket_->Disconnect();
-        emit eventInServerConnection(
-                QString("Event is server connection: "
-                        "disconnected from server"), false);
-    }
-    else
-        connectToServer();
+    connectToServer();
     emit SaveMe();
 }
 
 void ServerConnectionDlg::connectToServer(){
-    QString ip, port;
-    ip = ui->ip_lineEdit->text();
-    port = ui->port_lineEdit->text();
-    bool isConnected = socket_->Connect(ip, port.toInt());
-    if(isConnected){
-        emit eventInServerConnection(
-                QString("Event is server connection: "
-                        "Connected to sever ip: %1 pot: %2").arg(ip, port), false);
+    if(socket_->IsConnected()){
+        socket_->Disconnect();
+    }else{
+        QString ip = ui->ip_lineEdit->text();
+        QString port = ui->port_lineEdit->text();
+        socket_->Connect(ip, port.toInt());
     }
-    else{
-        emit eventInServerConnection(
-                QString("Event is server connection: "
-                        "Cant connect to sever ip: %1 pot: %2").arg(ip, port), true);
-    }
-    ui->connect_pushButton->setChecked(isConnected);
 }
 
 void ServerConnectionDlg::autoConnectBtnClicked(){

@@ -578,4 +578,3 @@ uchar& ProtosMessage::operator[](const uchar& index)
 	else
 		return IdBytes[0];
 }
-

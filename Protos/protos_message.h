@@ -75,6 +75,7 @@ struct ProtosMessage
 	ProtosMessage();
 	ProtosMessage(const QByteArray&);
 	ProtosMessage(const QString&);
+
 	ProtosMessage(uchar destAddr, uchar senderAddr, ProtosMessage::MsgTypes msgType, uchar dlc, uchar data0, uchar data1 = 0, uchar data2 = 0, uchar data3 = 0, uchar data4 = 0, uchar data5 = 0, uchar data6 = 0, uchar data7 = 0);
 	ProtosMessage(uchar destAddr, uchar senderAddr, uchar paramId, ProtosMessage::MsgTypes msgType, ProtosMessage::ParamFields paramField = VALUE, QVariant fieldValue = QVariant());
 //    template<typename ... Args>
