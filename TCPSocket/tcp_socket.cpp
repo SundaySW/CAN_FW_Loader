@@ -31,11 +31,11 @@ void Tcp_socket::ReadingLoop(){
     });
 
     while(thread_flag_.load()){
-        if(socket.waitForReadyRead()){
+        if(socket.waitForReadyRead(1)){
             auto socket_data = socket.readAll();
             MsgPullOut(socket_data);
         }
-        if(tx_msg_queue_.try_dequeue(msg)){
+        while (tx_msg_queue_.try_dequeue(msg)){
             auto data = PackSocketMsg(msg);
             auto bytes_written = socket.write(data);
             bool result = (bytes_written == data.size());

@@ -26,6 +26,9 @@
          <property name="text">
           <string>UID:</string>
          </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
         </widget>
        </item>
        <item>
@@ -43,6 +46,9 @@
         <widget class="QLabel" name="label_6">
          <property name="text">
           <string>Address:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
          </property>
         </widget>
        </item>
@@ -62,6 +68,9 @@
          <property name="text">
           <string>SW version:</string>
          </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
         </widget>
        </item>
        <item>
@@ -80,6 +89,9 @@
          <property name="text">
           <string>File name:</string>
          </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
         </widget>
        </item>
        <item>
@@ -93,39 +105,28 @@
      </item>
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout_6">
+       <property name="leftMargin">
+        <number>7</number>
+       </property>
+       <property name="topMargin">
+        <number>7</number>
+       </property>
+       <property name="rightMargin">
+        <number>7</number>
+       </property>
+       <property name="bottomMargin">
+        <number>7</number>
+       </property>
        <item>
         <widget class="QProgressBar" name="progressBar">
          <property name="value">
-          <number>24</number>
+          <number>0</number>
          </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-     <item>
-      <layout class="QHBoxLayout" name="horizontalLayout_7">
-       <item>
-        <widget class="QPushButton" name="cancel_btn">
-         <property name="minimumSize">
-          <size>
-           <width>30</width>
-           <height>30</height>
-          </size>
+         <property name="textVisible">
+          <bool>false</bool>
          </property>
-         <property name="maximumSize">
-          <size>
-           <width>30</width>
-           <height>30</height>
-          </size>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <property name="iconSize">
-          <size>
-           <width>30</width>
-           <height>30</height>
-          </size>
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
          </property>
         </widget>
        </item>
@@ -134,9 +135,92 @@
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout_5">
        <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_7">
+         <item>
+          <widget class="QPushButton" name="refresh_btn">
+           <property name="minimumSize">
+            <size>
+             <width>30</width>
+             <height>30</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>30</width>
+             <height>30</height>
+            </size>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset resource="../Resources/icons.qrc">
+             <normaloff>:/icons/icons/refresh.svg</normaloff>:/icons/icons/refresh.svg</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>30</width>
+             <height>30</height>
+            </size>
+           </property>
+           <property name="autoDefault">
+            <bool>true</bool>
+           </property>
+           <property name="default">
+            <bool>true</bool>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="cancel_btn">
+           <property name="minimumSize">
+            <size>
+             <width>30</width>
+             <height>30</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>30</width>
+             <height>30</height>
+            </size>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset resource="../Resources/icons.qrc">
+             <normaloff>:/icons/icons/close.svg</normaloff>:/icons/icons/close.svg</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>30</width>
+             <height>30</height>
+            </size>
+           </property>
+           <property name="autoDefault">
+            <bool>true</bool>
+           </property>
+           <property name="default">
+            <bool>true</bool>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
         <widget class="QLabel" name="label">
          <property name="text">
           <string>Time elapsed:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
          </property>
         </widget>
        </item>
@@ -153,6 +237,8 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="../Resources/icons.qrc"/>
+ </resources>
  <connections/>
 </ui>

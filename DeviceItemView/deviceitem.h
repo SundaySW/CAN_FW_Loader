@@ -13,8 +13,12 @@ class DeviceItem : public QGroupBox
 
 public:
     explicit DeviceItem(QWidget *parent = nullptr);
+    void SetStatusValue(int delta);
+    void ProcessStarted();
+    void ProcessFinished(int msec);
     ~DeviceItem();
-
+signals:
+    void RefreshDevice();
 private:
     Ui::DeviceItem *ui;
 };

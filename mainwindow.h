@@ -8,6 +8,7 @@
 #include "serverconnectiondlg.h"
 #include "tcp_socket.hpp"
 #include "fw_loader.hpp"
+#include "DeviceItemView/deviceitem.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -30,23 +31,24 @@ private:
     QTimer* serverReconnectionTimer_;
     QString lastUID = "0", lasrADDR = "0", SWVer = "0";
     QSharedPointer<FWLoader> fwLoader_;
+    QMap<uint, DeviceItem*> devices_;
+    const int k_column_n_ = 2;
+    int column_ = 0;
+    int row_ = 0;
 
     void LoadFromJson();
     void SignalConnections();
-    void EventServerConnectionHandler(const QString &eventStr, bool isError = true);
+    void LogEvent(const QString &eventStr, bool isError = true);
     void SetViewIcons();
     void SaveToJson();
     void ServerBtnClicked();
     void StatusBtnClicked();
-
     void AddDevice();
-
-    void ackInBootReceived();
-
+    void ackInBootReceived(uint uid);
     void finishedOk(uint uid, int msecs);
-
     void getError(const QString &error, uint uid);
-
     void updateStatus(uint delta, uint uid, uint addr);
+    void AddDeviceToGrid(DeviceItem *item);
+
 };
 #endif // MAINWINDOW_H

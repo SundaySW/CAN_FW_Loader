@@ -11,7 +11,7 @@ FWLoader::FWLoader(const QSharedPointer<Tcp_socket>& socket):
 void FWLoader::addDevice(const QString &fileName, uchar addr, uint uid, uchar uidT, uchar ver) {
     DeviceHolder device = DeviceHolder(fileName, addr, uid, uidT, ver);
     device.OnNextBlockSignal = [this](uint delta, uint uid, uint addr)  { signalNextBlock(delta, uid, addr); };
-    device.readyToSendSignal = [this](uint UID)                         { transmitBlock(UID); };
+//    device.readyToSendSignal = [this](uint UID)                         { transmitBlock(UID); };
     device.errorSignal       = [this](const QString& error, uint uid)   { signalError(error, uid); };
     device.finishedDevice    = [this](uint uid, int msecs)              { removeDevice(uid, msecs);};
     device.msgToSend         = [this](const ProtosMessage& m)           { socket_->SendMsg(m); };
@@ -41,9 +41,18 @@ void FWLoader::ParseBootMsg(const ProtosMessage& msg) {
                     case Protos::BOOT_FC_RESEND_PACKETS:
                         device->missedPackets(missed_from, msg.Data[5], onTargetBlockNum);
                         break;
+                    case Protos::BOOT_FC_BLOCK_VALIDATED:
+                        device->processValidatedData();
+                        break;
                     case Protos::BOOT_FC_BLOCK_UNVALIDATED:
+                        device->manageBlock(onTargetBlockNum);
+                        break;
                     case Protos::BOOT_FC_BLOCK_OK:
+                        device->manageBlock(onTargetBlockNum);
+                        break;
                     case Protos::BOOT_FC_FLASH_BLOCK_WRITE_FAIL:
+                        device->manageBlock(onTargetBlockNum);
+                        break;
                     case Protos::BOOT_FC_BLOCK_CRC_FAIL:
                         device->manageBlock(onTargetBlockNum);
                         break;
@@ -59,7 +68,7 @@ void FWLoader::ParseBootMsg(const ProtosMessage& msg) {
         else if (messageType == Protos::MSGTYPE_BOOT_ACK) {
             if(device->isLastBlock())
                 device->finishDevice();
-            signalAckReceived();
+            signalAckReceived(uid);
             device->ackReceived();
         }
     }

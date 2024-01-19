@@ -16,6 +16,10 @@ DeviceHolder::DeviceHolder(const QString &fileName, uchar address, uint uid, uch
     totalBlocks = fileSize / BLOCK_SIZE_FLASH + ((fileSize % BLOCK_SIZE_FLASH) ? 1 : 0);
 }
 
+void DeviceHolder::processValidatedData(){
+    sendDataPackets(BABuffer->size());
+}
+
 bool DeviceHolder::transmitBlock(){
     bool result = true;
     if(dataPending){
@@ -23,7 +27,7 @@ bool DeviceHolder::transmitBlock(){
         qint32 bytes = fileDataStream->readRawData(BABuffer->data(), BABuffer->size());
         BABuffer->resize(bytes);
         sendAddrCRCmsg(bytes);
-        sendDataPackets(bytes);
+//        sendDataPackets(bytes);
     }
     return result;
 }
@@ -36,7 +40,8 @@ void DeviceHolder::processBlock(uint blockNum) {
     if(setBlockSeekFile(blockNum)){
         OnNextBlockSignal(getStatusBarData(), UID, Address);
         dataPending = true;
-        readyToSendSignal(UID);
+//        readyToSendSignal(UID);
+        transmitBlock();
     }
     else{
         if(blockNum == (totalBlocks))
@@ -58,7 +63,8 @@ inline bool DeviceHolder::setBlockSeekFile(uint16_t targetBlockNum, int nOfPacke
 void DeviceHolder::missedPackets(uint16_t from, uint8_t len, uint16_t targetBlockNum){
     setBlockSeekFile(targetBlockNum, len, from);
     dataPending = true;
-    readyToSendSignal(UID);
+//    readyToSendSignal(UID);
+    transmitBlock();
 }
 
 void DeviceHolder::ackReceived(){
@@ -77,8 +83,8 @@ inline uint16_t DeviceHolder::calcCRC(int dataLen) {
 
 void DeviceHolder::sendDataPackets(int len){
     uint32_t absByteNum = fileDataStream->device()->pos();
-    uint32_t BABufferSize = BABuffer->size();
-    if(BABufferSize >= 0)
+    int BABufferSize = BABuffer->size();
+    if (BABufferSize >= 0)
         absByteNum = absByteNum - BABufferSize;
     uint8_t bufferPacketData[8];
     uint packetNum = 0;
@@ -145,8 +151,9 @@ void DeviceHolder::SendStayInBootMsg(){
 
 void DeviceHolder::sendAddrCRCmsg(int dataLen){
     uint32_t absByteNum = fileDataStream->device()->pos();
-    uint32_t BABufferSize = BABuffer->size();
-    if(BABufferSize>=0) absByteNum = absByteNum - BABufferSize;
+    int BABufferSize = BABuffer->size();
+    if (BABufferSize >= 0)
+        absByteNum = absByteNum - BABufferSize;
     uint16_t CRC = calcCRC(dataLen);
     uchar data[8];
     data[0] = CRC & 0xff;

@@ -20,12 +20,8 @@ MainWindow::MainWindow(QWidget *parent)
     SetViewIcons();
     SignalConnections();
     LoadFromJson();
-    socket_->AddErrorHandler([this](auto& str){ EventServerConnectionHandler(str); });
+    socket_->AddErrorHandler([this](auto& str){ LogEvent(str); });
     socket_->AddRxMsgHandler([this](const ProtosMessage& rxMsg) { fwLoader_->ParseBootMsg(rxMsg); });
-    connect(fwLoader_.get(), &FWLoader::signalNextBlock, this, [this](uint d, uint u, uint a){ updateStatus(d, u, a); });
-    connect(fwLoader_.get(), &FWLoader::signalAckReceived, this, [this]{ ackInBootReceived(); });
-    connect(fwLoader_.get(), &FWLoader::signalFinishedOK, this, [this](uint uid, int msecs){ finishedOk(uid, msecs); });
-    connect(fwLoader_.get(), &FWLoader::signalError, this, [this](const QString& e, uint uid){ getError(e, uid); });
 }
 
 void MainWindow::AddDevice(){
@@ -55,22 +51,28 @@ void MainWindow::AddDevice(){
         uchar version = ver->text().toShort(nullptr, 16);
         QString fileName = QFileDialog::getOpenFileName(this,
                                                         tr("Open Bin"), "/home", tr("Bin Files (*.bin)"));
-//            QString fileName = "D:\\u\\sa_pico_can.bin";
         QFile file(fileName);
-        if (file.open(QIODevice::ReadWrite))
-        {
+//        if (file.open(QIODevice::ReadWrite))
+//        {
+            devices_.insert(uid24, new DeviceItem());
+            auto new_device = devices_[uid24];
+            AddDeviceToGrid(new_device);
+            connect(new_device, &DeviceItem::RefreshDevice, this, [this, uid24] { fwLoader_->transmitBlock(uid24);});
             fwLoader_->addDevice(fileName, addr8, uid24, 0x1, version);
-            qDebug() << (tr("UID: %1 ADDR: %2 ").arg(uid24).arg(addr8));
-//            statusLabel->setText(tr("Device loaded UID: %1 ADDR: %2 ").arg(uid24, 8, 16).arg(addr8, 2,16));
-//            logView->AddMsg(tr("Device loaded UID: %1 ADDR: %2 ").arg(uid24, 8, 16).arg(addr8, 2,16));
-            ui-
-        }
-        else{
-//            logView->AddMsg(tr("Failed to open file"));
-        }
-    } else{
-//        statusLabel->setText(tr("Aborted adding device"));
-//        logView->AddMsg(tr("Aborted adding device"));
+            LogEvent(tr("Device loaded UID: %1 ADDR: %2 ").arg(uid24, 8, 16).arg(addr8, 2, 16), false);
+//        }
+//        else
+//            LogEvent(tr("Failed to open file"));
+    }
+}
+
+void MainWindow::AddDeviceToGrid(DeviceItem* item) {
+    ui->gridLayout->addWidget(item, row_, column_);
+    if(column_ < k_column_n_)
+        column_++;
+    else{
+        column_ = 0;
+        row_++;
     }
 }
 
@@ -78,9 +80,15 @@ void MainWindow::SignalConnections(){
     connect(ui->status_button, &QPushButton::clicked, [this](){ StatusBtnClicked(); });
     connect(ui->server_button, &QPushButton::clicked, [this](){ ServerBtnClicked(); });
     connect(serverConnectionDlg_, &ServerConnectionDlg::eventInServerConnection,
-            [this](const QString& s, bool b){ EventServerConnectionHandler(s, b);});
+            [this](const QString& s, bool b){ LogEvent(s, b);});
     connect(serverConnectionDlg_, &ServerConnectionDlg::SaveMe, [this](){ SaveToJson();});
     connect(ui->status_listWidget, &QListWidget::itemDoubleClicked, [this](){ ui->status_listWidget->clear(); });
+    connect(ui->add_device_btn, &QPushButton::clicked, this, [this]{ AddDevice(); });
+
+    connect(fwLoader_.get(), &FWLoader::signalNextBlock, this, [this](uint d, uint u, uint a){ updateStatus(d, u, a); });
+    connect(fwLoader_.get(), &FWLoader::signalAckReceived, this, [this](uint uid){ ackInBootReceived(0); });
+    connect(fwLoader_.get(), &FWLoader::signalFinishedOK, this, [this](uint uid, int msecs){ finishedOk(uid, msecs); });
+    connect(fwLoader_.get(), &FWLoader::signalError, this, [this](const QString& e, uint uid){ getError(e, uid); });
 }
 
 void MainWindow::ServerBtnClicked(){
@@ -115,7 +123,6 @@ void MainWindow::LoadFromJson(){
     serverConnectionDlg_->loadDataFromJson(jsonSaved_["serverConnection"].toObject());
 }
 
-
 void MainWindow::SaveToJson() {
     jsonSaved_["serverConnection"] = serverConnectionDlg_->SaveDataToJson();
 
@@ -129,7 +136,7 @@ void MainWindow::SaveToJson() {
     configFile->close();
 }
 
-void MainWindow::EventServerConnectionHandler(const QString& eventStr, bool isError){
+void MainWindow::LogEvent(const QString& eventStr, bool isError){
     if(isError){
         ui->status_listWidget->addItem(eventStr);
         ui->status_listWidget->item(ui->status_listWidget->count()-1)->setIcon(statusErrorIcon);
@@ -150,30 +157,23 @@ void MainWindow::SetViewIcons(){
 }
 
 void MainWindow::updateStatus(uint delta, uint uid, uint addr) {
-    if(delta >= 100) statusLabel->setText("Status: all packets sent and received by target");
-    else {
-        statusLabel->setText(QStringLiteral("Status: %1%").arg(delta));
-        logView->AddMsg(tr("Device UID: %1, Boot Addr: %2 Status: %3%").arg(uid,8,16).arg(addr, 3,16).arg(delta));
-    }
+    if(!devices_.contains(uid)) return;
+    auto device_item = devices_[uid];
+    device_item->SetStatusValue(delta);
+    qDebug() << "next block: " << delta;
 }
 
-void MainWindow::ackInBootReceived() {
-    QDialog dlg(this);
-    dlg.setWindowTitle(tr("ackRecieved"));
-    QDialogButtonBox *btn_box = new QDialogButtonBox(&dlg);
-    btn_box->setStandardButtons(QDialogButtonBox::Ok);
-    connect(btn_box, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
-    QFormLayout *layout = new QFormLayout();
-    layout->addWidget(btn_box);
-    dlg.setLayout(layout);
-    if(dlg.exec() == QDialog::Accepted) {
-    }
+void MainWindow::ackInBootReceived(uint uid) {
+    if(!devices_.contains(uid)) return;
+    auto device_item = devices_[uid];
+    device_item->ProcessStarted();
+    LogEvent(tr("Loading started for UID: %1").arg(uid), false);
 }
 
 void MainWindow::finishedOk(uint uid, int msecs) {
-    QString msg = QString(tr("On device UID:%1 successfully loaded new FW. Time spent(msecs): %2").arg(uid, 8, 16).arg(msecs));
-    logView->AddMsg(msg);
-    statusLabel->setText(msg);
+    if(!devices_.contains(uid)) return;
+    auto device_item = devices_[uid];
+    device_item->ProcessFinished(msecs);
 }
 
 void MainWindow::getError(const QString &error, uint uid) {
@@ -188,14 +188,13 @@ void MainWindow::getError(const QString &error, uint uid) {
     connect(btn_box, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
 
     errorLabel->setAlignment(Qt::AlignHCenter);
-    errorLabel->setMinimumSize(statusLabel->sizeHint());
+//    errorLabel->setMinimumSize(statusLabel->sizeHint());
     layout->addRow(errorLabel);
     layout->addRow(questionLabel);
     layout->addWidget(btn_box);
 
     dlg.setLayout(layout);
 
-    if(dlg.exec() == QDialog::Accepted) {
-        fwLoader->cancelFWLoad(uid);
-    }
+    if(dlg.exec() == QDialog::Accepted)
+        fwLoader_->cancelFWLoad(uid);
 }

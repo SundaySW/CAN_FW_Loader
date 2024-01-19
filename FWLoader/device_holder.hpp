@@ -17,7 +17,7 @@
 class DeviceHolder{
 public:
     std::function<void(uint delta, uint uid, uint addr)> OnNextBlockSignal;
-    std::function<void(uint UID)> readyToSendSignal;
+//    std::function<void(uint UID)> readyToSendSignal;
     std::function<void(const QString& error, uint uid)> errorSignal;
     std::function<void(uint uid, int msecs)> finishedDevice;
     std::function<void(const ProtosMessage&)> msgToSend;
@@ -34,6 +34,7 @@ public:
     void restart();
     void sendJumpToBootmsg();
     void finishDevice();
+    void processValidatedData();
 
 protected:
 private:
@@ -56,7 +57,6 @@ private:
     void sendBootmsg(uchar *data, uint32_t idBytes, uchar msgType);
     void sendAddrCRCmsg(int dataLen);
     void sendFinishFlashMsg();
-
     void SendStayInBootMsg();
     void processBlock(uint blockNum);
 };

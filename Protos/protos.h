@@ -93,6 +93,7 @@ namespace Protos
         BOOT_FC_BLOCK_UNVALIDATED = 0x7,
         BOOT_FC_FLASH_READY = 0x8,
         BOOT_FC_BLOCK_CRC_FAIL = 0x9,
+        BOOT_FC_BLOCK_VALIDATED = 0xA,
     };
 
 	// Flow control flag

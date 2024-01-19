@@ -15,7 +15,7 @@ public:
     void ParseBootMsg(const ProtosMessage &msg);
     void cancelFWLoad(uint UID);
 signals:
-    void signalAckReceived();
+    void signalAckReceived(uint uid);
     void signalNextBlock(uint delta, uint uid, uint addr);
     void signalFinishedOK(uint uid, int msecs);
     void signalBootData(uint UID);
