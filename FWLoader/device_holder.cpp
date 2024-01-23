@@ -2,97 +2,96 @@
 #include "device_holder.hpp"
 
 DeviceHolder::DeviceHolder(const QString &fileName, uchar address, uint uid, uchar uidT, uchar ver):
-        Address(address)
-        , UID(uid)
-        , UIDType(uidT)
-        , dataPending(false)
-        , loadingSWVer(ver)
+        address_(address)
+        , uid_(uid)
+        , uid_type_(uidT)
+        , data_pending_(false)
+        , loading_sw_ver_(ver)
 {
-    BABuffer = new QByteArray(BLOCK_SIZE_FLASH, 0xFF);
-    fwFile = new QFile(fileName);
-    fwFile->open(QIODevice::ReadWrite);
-    fileDataStream = new QDataStream(fwFile);
-    qint64 fileSize = fileDataStream->device()->size();
-    totalBlocks = fileSize / BLOCK_SIZE_FLASH + ((fileSize % BLOCK_SIZE_FLASH) ? 1 : 0);
+    buffer_ = new QByteArray(BLOCK_SIZE_FLASH, static_cast<char>(0xFF));
+    fw_file_ = new QFile(fileName);
+    fw_file_->open(QIODevice::ReadWrite);
+    file_stream_ = new QDataStream(fw_file_);
+    qint64 fileSize = file_stream_->device()->size();
+    blocks_total_ = fileSize / BLOCK_SIZE_FLASH + ((fileSize % BLOCK_SIZE_FLASH) ? 1 : 0);
 }
 
-void DeviceHolder::processValidatedData(){
-    sendDataPackets(BABuffer->size());
-}
-
-bool DeviceHolder::transmitBlock(){
-    bool result = true;
-    if(dataPending){
-        dataPending = false;
-        qint32 bytes = fileDataStream->readRawData(BABuffer->data(), BABuffer->size());
-        BABuffer->resize(bytes);
-        sendAddrCRCmsg(bytes);
-//        sendDataPackets(bytes);
+void DeviceHolder::TransmitBlock(){
+    if(data_pending_){
+        data_pending_ = false;
+        qint32 bytes = file_stream_->readRawData(buffer_->data(), buffer_->size());
+        buffer_->resize(bytes);
+        SendAddrCRCMsg(bytes);
+        SendDataPackets(bytes);
     }
-    return result;
 }
 
-void DeviceHolder::manageBlock(uint receivedBlockNum) {
-    processBlock(receivedBlockNum);
+void DeviceHolder::ManageBlock(uint receivedBlockNum) {
+    ProcessBlock(receivedBlockNum);
 }
 
-void DeviceHolder::processBlock(uint blockNum) {
-    if(setBlockSeekFile(blockNum)){
-        OnNextBlockSignal(getStatusBarData(), UID, Address);
-        dataPending = true;
-//        readyToSendSignal(UID);
-        transmitBlock();
+void DeviceHolder::StartUpload() {
+    elapsed_timer_.start();
+    ProcessBlock(0);
+}
+
+void DeviceHolder::RefreshUpload() {
+    ProcessBlock(current_block_);
+}
+
+void DeviceHolder::ProcessBlock(uint blockNum) {
+    if(SetBlock(blockNum)){
+        OnNextBlockSignal(GetStatusBarData(), uid_, address_);
+        data_pending_ = true;
+        TransmitBlock();
     }
     else{
-        if(blockNum == (totalBlocks))
-            finishDevice();
-        else errorSignal("Target sent blockNum out of range", UID);
+        if(blockNum == (blocks_total_))
+            FinishDevice();
+        else ErrorSignal("Target sent blockNum out of range", uid_);
     }
 }
 
-inline bool DeviceHolder::setBlockSeekFile(uint16_t targetBlockNum, int nOfPackets, int blockOffsetInPackets){
+inline bool DeviceHolder::SetBlock(uint16_t targetBlockNum, int nOfPackets, int blockOffsetInPackets){
     bool result = false;
-    if(targetBlockNum < totalBlocks && targetBlockNum >= 0) {
-        currentBlock = targetBlockNum;
-        result = fileDataStream->device()->seek((currentBlock * BLOCK_SIZE_FLASH) + (blockOffsetInPackets * BYTES_IN_PACKET));
-        BABuffer->resize(nOfPackets * BYTES_IN_PACKET);
+    if(targetBlockNum < blocks_total_ && targetBlockNum >= 0) {
+        current_block_ = targetBlockNum;
+        result = file_stream_->device()->seek((current_block_ * BLOCK_SIZE_FLASH) + (blockOffsetInPackets * BYTES_IN_PACKET));
+        buffer_->resize(nOfPackets * BYTES_IN_PACKET);
     }
     return result;
 }
 
-void DeviceHolder::missedPackets(uint16_t from, uint8_t len, uint16_t targetBlockNum){
-    setBlockSeekFile(targetBlockNum, len, from);
-    dataPending = true;
-//    readyToSendSignal(UID);
-    transmitBlock();
+void DeviceHolder::ProcessMissedPackets(uint16_t from, uint8_t len, uint16_t targetBlockNum){
+    SetBlock(targetBlockNum, len, from);
+    data_pending_ = true;
+    TransmitBlock();
 }
 
-void DeviceHolder::ackReceived(){
-    elapsedTimer.start();
+void DeviceHolder::AckReceived(){
     SendStayInBootMsg();
-    processBlock(0);
 }
 
-inline uint16_t DeviceHolder::calcCRC(int dataLen) {
+inline uint16_t DeviceHolder::CalcCRC() {
     uint16_t currentCRC = 0;
-    for(uint8_t x : *BABuffer)
+    for(uint8_t x : *buffer_)
         currentCRC += x;
     currentCRC = (((~currentCRC) + 1) & 0xffff);
     return currentCRC;
 }
 
-void DeviceHolder::sendDataPackets(int len){
-    uint32_t absByteNum = fileDataStream->device()->pos();
-    int BABufferSize = BABuffer->size();
+void DeviceHolder::SendDataPackets(int len){
+    uint32_t absByteNum = file_stream_->device()->pos();
+    int BABufferSize = buffer_->size();
     if (BABufferSize >= 0)
         absByteNum = absByteNum - BABufferSize;
     uint8_t bufferPacketData[8];
     uint packetNum = 0;
     for (int i = 0; i < len; ++i) {
         uint index = i % BYTES_IN_PACKET;
-        bufferPacketData[index] = BABuffer->at(i);
+        bufferPacketData[index] = buffer_->at(i);
         if(!((i+1) % BYTES_IN_PACKET)){
-            sendDatamsg(bufferPacketData, absByteNum + (packetNum * BYTES_IN_PACKET));
+            SendDataMsg(bufferPacketData, absByteNum + (packetNum * BYTES_IN_PACKET));
             packetNum++;
         }
     }
@@ -100,71 +99,71 @@ void DeviceHolder::sendDataPackets(int len){
     if(incompletePacketFirstIndex){
         for(int i = incompletePacketFirstIndex; i < BYTES_IN_PACKET; i++)
             bufferPacketData[i] = 0xFF;
-        sendDatamsg(bufferPacketData, absByteNum + (packetNum * BYTES_IN_PACKET));
+        SendDataMsg(bufferPacketData, absByteNum + (packetNum * BYTES_IN_PACKET));
     }
 }
 
-void DeviceHolder::sendFinishFlashMsg(){
+void DeviceHolder::SendExitBootMsg(){
     uchar data[8];
-    data[0] = UIDType;
-    data[1] = Address;
+    data[0] = uid_type_;
+    data[1] = address_;
     data[2] = Protos::BOOT_FC_FLAG_FC;
-    data[3] = Protos::BOOT_FC_FINISH_FLASH;
-    sendBootmsg(data, UID, Protos::MSGTYPE_BOOT_FLOW);
+    data[3] = Protos::BOOT_FC_EXIT_BOOT;
+    SendBootMsg(data, uid_, Protos::MSGTYPE_BOOT_FLOW);
 }
 
-uint DeviceHolder::getStatusBarData() const{
-    return int(float(currentBlock)/float(totalBlocks)*100);
+uint DeviceHolder::GetStatusBarData() const{
+    return int(float(current_block_) / float(blocks_total_) * 100);
 }
 
-void DeviceHolder::restart(){
-    processBlock(0);
+void DeviceHolder::RestartProcess(){
+    ProcessBlock(0);
 }
 
-void DeviceHolder::finishProcess(){
-    fwFile->close();
-    BABuffer->clear();
+void DeviceHolder::FinishProcess(){
+    fw_file_->close();
+    buffer_->clear();
 }
 
-void DeviceHolder::sendDatamsg(uint8_t* data, uint absByteNum){
-    sendBootmsg(data, absByteNum,Protos::MSGTYPE_BOOT_DATA);
+void DeviceHolder::SendDataMsg(uint8_t* data, uint absByteNum){
+    SendBootMsg(data, absByteNum, Protos::MSGTYPE_BOOT_DATA);
 }
 
-void DeviceHolder::sendJumpToBootmsg(){
+void DeviceHolder::SendJumpToBootMsg(){
     uchar data[8];
-    data[0] = UIDType;
-    data[1] = Address;
-    sendBootmsg(data, UID, Protos::MSGTYPE_BOOT_BOOTREQ);
+    data[0] = uid_type_;
+    data[1] = address_;
+    SendBootMsg(data, uid_, Protos::MSGTYPE_BOOT_BOOTREQ);
 }
 
 void DeviceHolder::SendStayInBootMsg(){
     uchar data[8];
-    data[0] = UIDType;
-    data[1] = Address;
+    data[0] = uid_type_;
+    data[1] = address_;
     data[2] = Protos::BOOT_FC_FLAG_FC;
     data[3] = Protos::BOOT_FC_STAY_IN_BOOT;
-    data[4] = totalBlocks & 0xff;
-    data[5] = (totalBlocks >> 8) & 0xff;
-    data[6] = loadingSWVer;
-    sendBootmsg(data, UID, Protos::MSGTYPE_BOOT_FLOW);
+    data[4] = blocks_total_ & 0xff;
+    data[5] = (blocks_total_ >> 8) & 0xff;
+    data[6] = loading_sw_ver_;
+    SendBootMsg(data, uid_, Protos::MSGTYPE_BOOT_FLOW);
 }
 
-void DeviceHolder::sendAddrCRCmsg(int dataLen){
-    uint32_t absByteNum = fileDataStream->device()->pos();
-    int BABufferSize = BABuffer->size();
+void DeviceHolder::SendAddrCRCMsg(int dataLen){
+    uint32_t absByteNum = file_stream_->device()->pos();
+    int BABufferSize = buffer_->size();
     if (BABufferSize >= 0)
         absByteNum = absByteNum - BABufferSize;
-    uint16_t CRC = calcCRC(dataLen);
+    uint16_t CRC = CalcCRC();
     uchar data[8];
     data[0] = CRC & 0xff;
     data[1] = (CRC >> 8) & 0xff;
     data[2] = dataLen & 0xff;
     data[3] = (dataLen >> 8) & 0xff;
-    data[7] = Address;
-    sendBootmsg(data, absByteNum, Protos::MSGTYPE_BOOT_ADDR_CRC);
+    data[7] = address_;
+    SendBootMsg(data, absByteNum, Protos::MSGTYPE_BOOT_ADDR_CRC);
 }
 
-void DeviceHolder::sendBootmsg(uchar* data, uint32_t idBytes, uchar msgType){
+void DeviceHolder::SendBootMsg(uchar* data, uint32_t idBytes, uchar msgType) const{
     ProtosMessage setAddrCRCMsg(0, 0, ProtosMessage::MsgTypes::NONE, 8,
                   data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]);
     setAddrCRCMsg.IdBytes[0] = idBytes & 0xff;
@@ -175,15 +174,22 @@ void DeviceHolder::sendBootmsg(uchar* data, uint32_t idBytes, uchar msgType){
     setAddrCRCMsg.ProtocolType = ProtosMessage::RAW;
     setAddrCRCMsg.BootLoader = ProtosMessage::BOOT;
 
-    msgToSend(setAddrCRCMsg);
+    SendMsg(setAddrCRCMsg);
 }
 
-bool DeviceHolder::isLastBlock() {
-    return (currentBlock == (totalBlocks - 1));
+bool DeviceHolder::IsLastBlock() const {
+    return (current_block_ == (blocks_total_ - 1));
 }
 
-void DeviceHolder::finishDevice() {
-    sendFinishFlashMsg();
-    OnNextBlockSignal(100, UID, Address);
-    finishedDevice(UID, elapsedTimer.elapsed());
+bool DeviceHolder::IsFirstBlock() const {
+    return (current_block_ == 0);
+}
+
+void DeviceHolder::SendExitBoot(){
+    SendExitBootMsg();
+}
+
+void DeviceHolder::FinishDevice() {
+    SendExitBootMsg();
+    DeviceFinished(uid_, elapsed_timer_.elapsed());
 }

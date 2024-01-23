@@ -11,53 +11,45 @@ FWLoader::FWLoader(const QSharedPointer<Tcp_socket>& socket):
 void FWLoader::addDevice(const QString &fileName, uchar addr, uint uid, uchar uidT, uchar ver) {
     DeviceHolder device = DeviceHolder(fileName, addr, uid, uidT, ver);
     device.OnNextBlockSignal = [this](uint delta, uint uid, uint addr)  { signalNextBlock(delta, uid, addr); };
-//    device.readyToSendSignal = [this](uint UID)                         { transmitBlock(UID); };
-    device.errorSignal       = [this](const QString& error, uint uid)   { signalError(error, uid); };
-    device.finishedDevice    = [this](uint uid, int msecs)              { removeDevice(uid, msecs);};
-    device.msgToSend         = [this](const ProtosMessage& m)           { socket_->SendMsg(m); };
-    deviceList.insert(uid, device);
-    device.sendJumpToBootmsg();
-}
-
-void FWLoader::transmitBlocks() {
-    for(auto& device: deviceList)
-        device.transmitBlock();
+    device.ErrorSignal       = [this](const QString& error, uint uid)   { signalError(error, uid); };
+    device.DeviceFinished    = [this](uint uid, qint64 msecs)           { FinishDevice(uid, msecs);};
+    device.SendMsg           = [this](const ProtosMessage& msg)         { socket_->SendMsg(msg); };
+    device_list_.insert(uid, device);
+    device.SendJumpToBootMsg();
 }
 
 void FWLoader::ParseBootMsg(const ProtosMessage& msg) {
     if ((msg.ProtocolType != ProtosMessage::RAW) || !msg.Dlc || (msg.BootLoader != ProtosMessage::BOOT))
         return;
     uint uid = (msg.IdBytes[2] << 16) | (msg.IdBytes[1] << 8) | msg.IdBytes[0];
-    if(deviceList.contains(uid)){
-        DeviceHolder *device = &deviceList[uid];
-        uchar messageType = msg.BootMsgType;
-        if (messageType == Protos::MSGTYPE_BOOT_FLOW) {
+    if(device_list_.contains(uid)){
+        DeviceHolder *device = &device_list_.find(uid).value();
+        uchar message_type = msg.BootMsgType;
+        if (message_type == Protos::MSGTYPE_BOOT_FLOW) {
             uchar FcFlag = msg.Data[1];
             uchar FcCode = msg.Data[2];
             if (FcFlag == Protos::BOOT_FC_FLAG_FC){
-                uint16_t onTargetBlockNum   = msg.Data[6] + (msg.Data[7] << 8);
+                uint16_t device_block_n   = msg.Data[6] + (msg.Data[7] << 8);
                 uint16_t missed_from        = msg.Data[3] + (msg.Data[4] << 8);
+                uint8_t resend_packets_n    = msg.Data[5];
                 switch (FcCode) {
                     case Protos::BOOT_FC_RESEND_PACKETS:
-                        device->missedPackets(missed_from, msg.Data[5], onTargetBlockNum);
-                        break;
-                    case Protos::BOOT_FC_BLOCK_VALIDATED:
-                        device->processValidatedData();
+                        device->ProcessMissedPackets(missed_from, resend_packets_n, device_block_n);
                         break;
                     case Protos::BOOT_FC_BLOCK_UNVALIDATED:
-                        device->manageBlock(onTargetBlockNum);
+                        device->ManageBlock(device_block_n);
                         break;
                     case Protos::BOOT_FC_BLOCK_OK:
-                        device->manageBlock(onTargetBlockNum);
+                        device->ManageBlock(device_block_n);
                         break;
                     case Protos::BOOT_FC_FLASH_BLOCK_WRITE_FAIL:
-                        device->manageBlock(onTargetBlockNum);
+                        device->ManageBlock(device_block_n);
                         break;
                     case Protos::BOOT_FC_BLOCK_CRC_FAIL:
-                        device->manageBlock(onTargetBlockNum);
+                        device->ManageBlock(device_block_n);
                         break;
                     case Protos::BOOT_FC_FLASH_NOT_READY:
-                        device->restart();
+                        device->RestartProcess();
                         break;
                     case Protos::BOOT_FC_FLASH_READY:
                     default:
@@ -65,31 +57,37 @@ void FWLoader::ParseBootMsg(const ProtosMessage& msg) {
                 }
             }
         }
-        else if (messageType == Protos::MSGTYPE_BOOT_ACK) {
-            if(device->isLastBlock())
-                device->finishDevice();
-            signalAckReceived(uid);
-            device->ackReceived();
+        else if (message_type == Protos::MSGTYPE_BOOT_ACK){
+            auto addr =     msg.Data[1];
+            auto HWVer =    msg.Data[3];
+            auto FWVer =    msg.Data[4];
+            signalAckReceived(uid, addr, HWVer, FWVer);
+            device->AckReceived();
         }
     }
 }
 
-void FWLoader::transmitBlock(uint uid) {
-    if(deviceList.contains(uid))
-        deviceList[uid].transmitBlock();
-}
-
-void FWLoader::cancelFWLoad(uint uid) {
-    if(deviceList.contains(uid)) {
-        deviceList[uid].finishProcess();
-        deviceList.remove(uid);
+void FWLoader::RefreshDevice(uint uid) {
+    if (device_list_.contains(uid))
+    {
+        auto device = device_list_.find(uid).value();
+        device.IsFirstBlock() ? device.StartUpload() :
+                                device.RefreshUpload();
     }
 }
 
-void FWLoader::removeDevice(uint uid, int msecs) {
-    if(deviceList.contains(uid)) {
-        deviceList.find(uid)->finishProcess();
-        deviceList.remove(uid);
+void FWLoader::CancelFWLoad(uint uid) {
+    if(device_list_.contains(uid)) {
+        device_list_.find(uid).value().SendExitBoot();
+        device_list_.find(uid).value().FinishProcess();
+        device_list_.remove(uid);
+    }
+}
+
+void FWLoader::FinishDevice(uint uid, qint64 msecs) {
+    if(device_list_.contains(uid)) {
         signalFinishedOK(uid, msecs);
+        device_list_.find(uid).value().FinishProcess();
+        device_list_.remove(uid);
     }
 }

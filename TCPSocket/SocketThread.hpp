@@ -14,7 +14,7 @@ public:
     SocketThread(QString ip, qint16 port, QObject *parent = nullptr);
     void run() override;
     void PlaceMsg(ProtosMessage&);
-    ~SocketThread();
+    ~SocketThread() override;
 signals:
     void error(QString error);
     void statusUpdate(QString msg);

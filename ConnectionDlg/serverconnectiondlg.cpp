@@ -31,6 +31,7 @@ ServerConnectionDlg::ServerConnectionDlg(const QSharedPointer<Tcp_socket>& socke
         emit eventInServerConnection(m, false);
     });
     connect(socket_.get(), &Tcp_socket::error, this, [this](const QString& m){
+        ui->connect_pushButton->setChecked(false);
         emit eventInServerConnection(m, true);
     });
     connect(socket_.get(), &Tcp_socket::disconnected, this, [this](const QString& m){
