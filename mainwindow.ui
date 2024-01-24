@@ -14,7 +14,7 @@
    <string>MainWindow</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="Resources/icons.qrc">
+   <iconset resource="resources/icons.qrc">
     <normaloff>:/icons/icons/app_icon.svg</normaloff>:/icons/icons/app_icon.svg</iconset>
   </property>
   <property name="styleSheet">
@@ -167,7 +167,7 @@ QScrollBar::sub-line:vertical {
            <string/>
           </property>
           <property name="icon">
-           <iconset resource="Resources/icons.qrc">
+           <iconset resource="resources/icons.qrc">
             <normaloff>:/icons/icons/ok_circle.svg</normaloff>:/icons/icons/ok_circle.svg</iconset>
           </property>
           <property name="iconSize">
@@ -233,7 +233,7 @@ QScrollBar::sub-line:vertical {
            <string/>
           </property>
           <property name="icon">
-           <iconset resource="Resources/icons.qrc">
+           <iconset resource="resources/icons.qrc">
             <normaloff>:/icons/icons/server_disconnected.svg</normaloff>:/icons/icons/server_disconnected.svg</iconset>
           </property>
           <property name="iconSize">
@@ -275,7 +275,7 @@ QScrollBar::sub-line:vertical {
            <string/>
           </property>
           <property name="icon">
-           <iconset resource="Resources/icons.qrc">
+           <iconset resource="resources/icons.qrc">
             <normaloff>:/icons/icons/add.svg</normaloff>:/icons/icons/add.svg</iconset>
           </property>
           <property name="iconSize">
@@ -319,6 +319,9 @@ QScrollBar::sub-line:vertical {
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <item>
          <layout class="QGridLayout" name="gridLayout">
+          <property name="sizeConstraint">
+           <enum>QLayout::SetMinimumSize</enum>
+          </property>
           <item row="1" column="0">
            <spacer name="verticalSpacer">
             <property name="orientation">
@@ -328,19 +331,6 @@ QScrollBar::sub-line:vertical {
              <size>
               <width>20</width>
               <height>40</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item row="0" column="0">
-           <spacer name="horizontalSpacer">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
              </size>
             </property>
            </spacer>
@@ -355,7 +345,7 @@ QScrollBar::sub-line:vertical {
   </widget>
  </widget>
  <resources>
-  <include location="Resources/icons.qrc"/>
+  <include location="resources/icons.qrc"/>
  </resources>
  <connections/>
 </ui>

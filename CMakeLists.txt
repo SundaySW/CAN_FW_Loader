@@ -28,19 +28,19 @@ find_package(${qt_ver}SerialPort    REQUIRED)
 find_package(${qt_ver}PrintSupport  REQUIRED)
 
 include_directories(
-        ConnectionDlg
-        FWLoader
-        Protos
-        TCPSocket
-        DeviceItemView
+        connection_dlg
+        fw_loader
+        protos
+        tcp_socket
+        device_item_view
 )
 
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
-        ${CMAKE_CURRENT_SOURCE_DIR}/ConnectionDlg/*.*
-        ${CMAKE_CURRENT_SOURCE_DIR}/FWLoader/*.*
-        ${CMAKE_CURRENT_SOURCE_DIR}/Protos/*.*
-        ${CMAKE_CURRENT_SOURCE_DIR}/TCPSocket/*.*
-        ${CMAKE_CURRENT_SOURCE_DIR}/DeviceItemView/*.*
+        ${CMAKE_CURRENT_SOURCE_DIR}/connection_dlg/*.*
+        ${CMAKE_CURRENT_SOURCE_DIR}/fw_loader/*.*
+        ${CMAKE_CURRENT_SOURCE_DIR}/protos/*.*
+        ${CMAKE_CURRENT_SOURCE_DIR}/tcp_socket/*.*
+        ${CMAKE_CURRENT_SOURCE_DIR}/device_item_view/*.*
         )
 
 set(PROJECT_SOURCES
@@ -49,7 +49,7 @@ set(PROJECT_SOURCES
         mainwindow.cpp
         mainwindow.h
         mainwindow.ui
-        Resources/icons.qrc
+        resources/icons.qrc
         )
 
 configure_file(
@@ -72,7 +72,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     enable_language("RC")
-    set (WIN32_RESOURCES Resources/resource.rc)
+    set (WIN32_RESOURCES resources/resource.rc)
 endif()
 
 IF(CMAKE_BUILD_TYPE MATCHES Debug)
@@ -80,7 +80,7 @@ IF(CMAKE_BUILD_TYPE MATCHES Debug)
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/saved.json ${CMAKE_CURRENT_BINARY_DIR}/saved.json COPYONLY)
     add_custom_command(
             TARGET ${PROJECT_NAME} PRE_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/Resources/ ${CMAKE_CURRENT_BINARY_DIR}/Resources/
+            COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/resources/ ${CMAKE_CURRENT_BINARY_DIR}/Resources/
     )
 #    if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 #        add_custom_command(
@@ -95,7 +95,7 @@ IF(CMAKE_BUILD_TYPE MATCHES Release)
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/saved.json ${CMAKE_CURRENT_BINARY_DIR}/saved.json COPYONLY)
     add_custom_command(
             TARGET ${PROJECT_NAME} PRE_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/Resources/ ${CMAKE_CURRENT_BINARY_DIR}/Resources/
+            COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/resources/ ${CMAKE_CURRENT_BINARY_DIR}/Resources/
     )
     add_custom_command(
             TARGET ${PROJECT_NAME} POST_BUILD

@@ -20,14 +20,18 @@ void Tcp_socket::ReadingLoop(){
     ProtosMessage msg;
 
     socket.connectToHost(serverName, serverPort);
-    if(!socket.waitForConnected()){
+    if(!socket.waitForConnected(10)){
+        connected_ = false;
         emit error(QString("Connection Error Ip:%1 port:%2").arg(serverName).arg(serverPort));
         return;
-    }else
+    }else{
+        connected_ = true;
         emit connected(QString("Connected to %1:%2").arg(socket.peerName()).arg(socket.peerPort()));
-
+    }
     connect(&socket, &QTcpSocket::disconnected, [this, serverName, serverPort]{
+        connected_ = false;
         emit disconnected(QString("Disconnected from %1:%2").arg(serverName).arg(serverPort));
+        return;
     });
 
     while(thread_flag_.load()){
@@ -55,8 +59,8 @@ QByteArray Tcp_socket::PackSocketMsg(ProtosMessage& msg)
         QByteArray data(bytes_to_send + kServiceBytesCnt, '0');
         ushort dataIdx = 0;
         data[dataIdx++] = '#';
-        data[dataIdx++] = 0x40 + (0x3f & (bytes_to_send >> 8));
-        data[dataIdx++] = bytes_to_send & 0xff;
+        data[dataIdx++] = static_cast<char>(0x40 + (0x3f & (bytes_to_send >> 8)));
+        data[dataIdx++] = static_cast<char>(bytes_to_send & 0xff);
         for (std::size_t msgIdx = 0; msgIdx < bytes_to_send; msgIdx++)
             data[dataIdx++] = char(msg[msgIdx]);
         data[dataIdx] = '\r';
@@ -71,30 +75,70 @@ QByteArray Tcp_socket::PackSocketMsg(ProtosMessage& msg)
     }
 }
 
+//void Tcp_socket::MsgPullOut(QByteArray& socket_data){
+//    auto msg_list = socket_data.split('#');
+//    if(data_buffer_.isEmpty())
+//        msg_list.removeFirst();
+//    else{
+//        msg_list.first().prepend(data_buffer_);
+//        data_buffer_.clear();
+//    }
+//    for(auto& data : msg_list){
+//        if(data == msg_list.last() && data.size() < kMinPacketLength)
+//            data_buffer_.append(data);
+//        else{
+//            auto msg = ConvertDataToMsg(data);
+//            if(msg.second.Dlc)
+//                RxMsgHandler(msg.second);
+//            else if (msg.first != "0")
+//                ErrorHandler(msg.first);
+//        }
+//    }
+//}
+
 void Tcp_socket::MsgPullOut(QByteArray& socket_data){
-    auto msg_list = socket_data.split('#');
-    if(data_buffer_.isEmpty())
-        msg_list.removeFirst();
-    else{
-        msg_list.first().prepend(data_buffer_);
-        data_buffer_.clear();
-    }
-    for(auto& data : msg_list){
-        if(data == msg_list.last() && data.size() < kMinPacketLength)
-            data_buffer_.append(data);
-        else{
-            auto msg = ConvertDataToMsg(data);
-            if(msg.second.Dlc)
-                RxMsgHandler(msg.second);
-            else if (msg.first != "0")
-                ErrorHandler(msg.first);
+    ProtosMessage msg;
+    MsgByteType expected_byte = MsgByteType::START_BYTE;
+    int msg_length = 0;
+    int cursor = 0;
+
+    for(const char& byte: socket_data){
+        switch (expected_byte)
+        {
+            case MsgByteType::START_BYTE:
+                if(byte == '#')
+                    expected_byte = MsgByteType::FIRST_STATUS_BYTE;
+                break;
+            case MsgByteType::FIRST_STATUS_BYTE:
+                msg_length = byte & 0x3f;
+                msg_length <<= 8;
+                expected_byte = MsgByteType::SECOND_STATUS_BYTE;
+                break;
+            case MsgByteType::SECOND_STATUS_BYTE:
+                msg_length |= byte;
+                msg.Dlc = msg_length - ProtosMessage::IdLng;
+                cursor = 0;
+                expected_byte = MsgByteType::DATA_BYTE;
+                break;
+            case MsgByteType::DATA_BYTE:
+                msg[cursor++] = byte;
+                if (cursor == msg_length)
+                    expected_byte = MsgByteType::STOP_BYTE;
+                break;
+            case MsgByteType::STOP_BYTE:
+                if (byte == '\r' || byte == '\n')
+                    RxMsgHandler(msg);
+                else
+                    ErrorHandler("Incorrect msg end");
+                expected_byte = MsgByteType::START_BYTE;
+                break;
         }
     }
 }
 
 std::pair<QString, ProtosMessage> Tcp_socket::ConvertDataToMsg(const QByteArray& data){
     ProtosMessage msg;
-    int msg_length = 0;
+    int msg_length;
     int cursor = 0;
     if(data.size() < (cursor + 2))
         return {"Incorrect msg format, status section miss", msg};
@@ -123,7 +167,7 @@ void Tcp_socket::ErrorHandler(const QString& errSt)
         handler(errSt);
 }
 
-void Tcp_socket::Connect(const QString &Ip, const int &Port, int Timeout) {
+void Tcp_socket::Connect(const QString &Ip, const int &Port) {
     ip_ = Ip;
     port_ = Port;
     ThreadsDelete();
@@ -132,7 +176,7 @@ void Tcp_socket::Connect(const QString &Ip, const int &Port, int Timeout) {
     socket_thread_->start();
 }
 
-void Tcp_socket::Disconnect(int Timeout) {
+void Tcp_socket::Disconnect() {
     ThreadsDelete();
 }
 
@@ -142,18 +186,17 @@ void Tcp_socket::ThreadsDelete(){
          socket_thread_->deleteLater();
          socket_thread_->wait();
      }
-     socket_thread_.clear();
 }
 
-bool Tcp_socket::IsConnected() {
-    return socket_thread_;
+bool Tcp_socket::IsConnected() const {
+    return connected_;
 }
 
 std::optional<QString> Tcp_socket::GetIp() {
     return ip_;
 }
 
-int Tcp_socket::GetPort() {
+int Tcp_socket::GetPort() const {
     return port_;
 }
 

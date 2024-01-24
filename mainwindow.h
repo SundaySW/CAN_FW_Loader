@@ -5,10 +5,10 @@
 #include <QJsonObject>
 #include "QJsonDocument"
 
-#include "serverconnectiondlg.h"
+#include "server_connection_dlg.h"
 #include "tcp_socket.hpp"
 #include "fw_loader.hpp"
-#include "DeviceItemView/deviceitem.h"
+#include "device_item_view/device_item.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -44,11 +44,10 @@ private:
     void ServerBtnClicked();
     void StatusBtnClicked();
     void AddDevice();
-    void ackInBootReceived(uint uid);
-    void finishedOk(uint uid, int msecs);
-    void getError(const QString &error, uint uid);
-    void updateStatus(uint delta, uint uid, uint addr);
+    void FinishedOk(uint uid, qint64 msecs);
+    void GetError(const QString &error, uint uid);
+    void UpdateDeviceStatus(uint delta, uint uid, uint addr);
     void AddDeviceToGrid(DeviceItem *item);
-
+    void AckInBootReceived(uint uid, uchar addr, uchar hw, uchar fw);
 };
 #endif // MAINWINDOW_H

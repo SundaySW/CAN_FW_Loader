@@ -8,7 +8,7 @@
 
 #include "protos_message.h"
 
-#include "SocketThread.hpp"
+#include "socket_thread.hpp"
 
 class Tcp_socket : public QObject{
 Q_OBJECT
@@ -22,13 +22,13 @@ signals:
 
 public:
     Tcp_socket();
-    ~Tcp_socket();
+    ~Tcp_socket() override;
     void SendMsg(const ProtosMessage&);
-    void Connect(const QString& Ip, const int& Port, int Timeout = 10);
-    void Disconnect(int Timeout = 0);
+    void Connect(const QString &Ip, const int &Port);
+    void Disconnect();
     std::optional<QString> GetIp();
-    int  GetPort();
-    bool IsConnected();
+    int  GetPort() const;
+    bool IsConnected() const;
     void AddRxMsgHandler(const MsgHandlerT&);
     void AddTxMsgHandler(const MsgHandlerT&);
     void AddErrorHandler(const ErrorHandlerT&);
@@ -37,7 +37,7 @@ private:
     const int kServiceBytesCnt = 4,
         kMaxProtosMsgLength = 15,
         kMinPacketLength = 9;
-
+    bool connected_ = false;
     QMutex mutex_;
     QString ip_;
     int port_{};
@@ -61,6 +61,14 @@ private:
     void ErrorHandler(const QString&);
     void RxMsgHandler(ProtosMessage&);
     void TxMsgHandler(const ProtosMessage&);
-
     void ThreadsDelete();
+
+    enum class MsgByteType
+    {
+        START_BYTE,
+        FIRST_STATUS_BYTE,
+        SECOND_STATUS_BYTE,
+        DATA_BYTE,
+        STOP_BYTE
+    };
 };

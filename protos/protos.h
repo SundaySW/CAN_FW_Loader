@@ -86,14 +86,13 @@ namespace Protos
 	enum BOOT_FC_CODE{
         BOOT_FC_BLOCK_OK = 0x1,
         BOOT_FC_RESEND_PACKETS = 0x2,
-        BOOT_FC_FINISH_FLASH = 0x3,
+        BOOT_FC_EXIT_BOOT = 0x3,
         BOOT_FC_FLASH_NOT_READY = 0x4,
         BOOT_FC_FLASH_BLOCK_WRITE_FAIL = 0x5,
         BOOT_FC_STAY_IN_BOOT = 0x6,
         BOOT_FC_BLOCK_UNVALIDATED = 0x7,
         BOOT_FC_FLASH_READY = 0x8,
-        BOOT_FC_BLOCK_CRC_FAIL = 0x9,
-        BOOT_FC_BLOCK_VALIDATED = 0xA,
+        BOOT_FC_BLOCK_CRC_FAIL = 0x9
     };
 
 	// Flow control flag
@@ -113,6 +112,6 @@ namespace Protos
 		SL_FLOW_CTRL
 	};
 
-}//namespace Protos
+}//namespace protos
 
 #endif /* PROTOS_H_ */

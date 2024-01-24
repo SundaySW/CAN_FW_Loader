@@ -1,7 +1,7 @@
 
 #include <QTcpSocket>
 #include <utility>
-#include "SocketThread.hpp"
+#include "socket_thread.hpp"
 #include "QDataStream"
 
 SocketThread::SocketThread(QString IP, qint16 port, QObject *parent)
@@ -55,8 +55,8 @@ QByteArray SocketThread::PackSocketMsg(ProtosMessage& msg)
         QByteArray data(bytes_to_send + kServiceBytesCnt, '0');
         ushort dataIdx = 0;
         data[dataIdx++] = '#';
-        data[dataIdx++] = 0x40 + (0x3f & (bytes_to_send >> 8));
-        data[dataIdx++] = char(bytes_to_send & 0xff);
+        data[dataIdx++] = static_cast<char>(0x40 + (0x3f & (bytes_to_send >> 8)));
+        data[dataIdx++] = static_cast<char>(bytes_to_send & 0xff);
         for (std::size_t msgIdx = 0; msgIdx < bytes_to_send; msgIdx++)
             data[dataIdx++] = char(msg[msgIdx]);
         data[dataIdx] = '\r';
@@ -94,7 +94,7 @@ void SocketThread::MsgPullOut(QByteArray& socket_data) {
 
 std::pair<QString, ProtosMessage> SocketThread::ConvertDataToMsg(const QByteArray& data){
     ProtosMessage msg;
-    int msg_length = 0;
+    int msg_length;
     int cursor = 0;
     if(data.size() < (cursor + 2))
         return {"Incorrect msg format, status section miss", msg};

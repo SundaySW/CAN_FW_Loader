@@ -15,10 +15,13 @@ public:
     explicit DeviceItem(QWidget *parent = nullptr);
     void SetStatusValue(int delta);
     void ProcessStarted();
-    void ProcessFinished(int msec);
-    ~DeviceItem();
+    void ProcessFinished(qint64 msec);
+    void PostDeviceData(uint uid, uchar addr, uchar hw, uchar fw);
+    void SetReqData(const QString &fileName, std::optional<uchar> addr, uchar sw_version);
+    ~DeviceItem() override;
 signals:
     void RefreshDevice();
+    void CancelDevice();
 private:
     Ui::DeviceItem *ui;
 };
